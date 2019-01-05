@@ -1,0 +1,437 @@
+//请在c语言编译器上运行
+
+#include<stdio.h>
+#include<malloc.h>
+#include<string.h>
+#include<stdlib.h>
+#include<ctype.h>
+#define NULL 0
+#define MAX 100
+typedef struct lnode{
+	char date[MAX]; //存放数据
+	struct lnode * prior ; //前驱
+	struct lnode * next ; //后继
+	int number ; //记录一个节点的字符数！如果是头节点就记录他的节点个数
+	int quese ; //记录节点在链表中的位置
+}lnodetype;
+lnodetype * l ; //设置两个全局变量，分别是头节点指针和尾节点指针
+lnodetype * end ;
+
+
+//**********这个函数是用来初始化的**********//
+int iniatelist (lnodetype ** l , lnodetype ** end)
+{
+	(*l) = (lnodetype *)malloc (sizeof (lnodetype) ) ;
+	if ( (*l) == NULL )
+	{
+		printf ("没有只够的内存空间！程序即将退出！");
+		return 0 ;
+	}
+	(*l)->prior =(*l)->next = NULL ; //这是双链表
+	(*l)->number = (*l)->quese = 0;
+	(*end) = (*l) ;
+	printf ("程序初始化完毕！");
+	return 0;
+}
+
+
+//**********这个函数是用来建立节点，并且插入元素的**********//
+int link(lnodetype ** l, lnodetype ** end)
+{
+	lnodetype *s ;
+	s = (lnodetype *)malloc ( sizeof (lnodetype) ) ;
+	if ( s == NULL ){
+		printf ("内存空间不够，程序即将退出！") ;
+	return 0 ;
+	}
+	(*end)->next = s ;
+	s->prior = (*end) ;
+	(*end) = (*end)->next ;
+	(*l)->number++ ; //增加一个节点，头节点的number就加1
+	s->quese = (*l)->number ; //这个是记录节点在链表中的位置
+	printf ("%d行", s->quese ) ; //这个是节点在整个链表中的位置
+	gets(s->date) ;
+	s -> number = strlen(s->date) ;
+	return 0 ;
+}
+
+
+//**********这个是打印链表的函数**********//
+int prin (lnodetype ** l, lnodetype ** end)
+{
+	lnodetype * p ;
+	int i ;
+	int j = 0;
+	int couter = (*l)->number ;
+	p = (*l)->next ;
+	for (i=0; i < couter; i++){
+		printf ( "%d行" , i+1 ) ;
+		j = 0;
+	while ( ( p->date[j]>='a' && p->date[j]<='z') ||
+	(p->date[j]>='A' && p->date[j]<='z') ||
+	p->date[j]>='0' && p->date[j]<='9')
+{
+printf ( "%c" , p->date[j] ) ;
+j++ ;
+}
+printf ("n") ;
+p = p->next ;
+}
+return 0 ;
+}
+
+
+//*********这个查找和编辑相应行的函数**********//
+int search (lnodetype ** l, lnodetype ** end )
+{
+int number ;
+scanf ("%d" , &number) ;
+int i ;
+lnodetype * p ;
+p = (*l)->next ;
+for ( i=0; i<number-1; i++ )
+p = p->next ;
+printf ("%d行" , number ) ;
+gets (p->date) ;
+return 0 ;
+}
+
+
+//**********这个是在文本文件里搜索字符串的函数**********//
+int searchstr(lnodetype ** l , lnodetype ** end)
+{
+char ptr[100] ;
+int arrycouter ;
+int mystrcmp( char *, char * , int ) ;
+printf ( "ok!现在输入你查找的字符串！" ) ;
+scanf ( "%s" , ptr ) ;
+arrycouter = strlen (ptr) ;
+lnodetype * s ;
+s = (*l)->next ;
+char * p ;
+int i = 1 ;
+int couter = 0 ;
+int number = (*l)->number ;
+p = (char *)s->date ;
+while ( i && number ){
+// i=1是，证明没有找到，向第二个节点继续寻找
+while ( i && ( ( (*p >= 'a') && (*p <= 'z') ) || ( (*p >= 'A') && (*p <= 'Z') ) ) ){
+i = mystrcmp ( p , ptr , arrycouter );
+if ( i == 1 ){
+printf ("字符串已经在第%d行,第%d个字符开始,",s->quese, couter+1 );
+i = 0 ;
+}
+else
+{
+p++ ;
+couter++;
+i = 1 ;
+}
+}
+s = s->next ;
+p = (char *)s->date ;
+number -- ;
+}
+if ( i == 1 )
+printf ("字符串在本文档中不存在！");
+return 0 ;
+}
+
+//**********（1）这个函数是用来实现退出不保存功能的**********//
+int exitunsave(lnodetype ** l, lnodetype ** end)
+{
+lnodetype * s ;
+while( (*l) != (*end) ){ //如果不保存的话，最好是把节点的空间都释放，节省空间
+s = (*end) ;
+(*end) = (*end)->prior ;
+free( s ) ;
+}
+return 0 ;
+}
+
+//**********（2）这个函数是用来实现退出但保存功能的**********//
+int quitandsave( lnodetype ** l , lnodetype ** end )
+{
+FILE * fp ;
+char ch ;
+char filename[20] ;
+lnodetype * p;
+int i ;
+int j ;
+int couter = (*l)->number ;
+p = (*l)->next ;
+printf ("请输入文件名：") ;
+scanf ("%s" , filename ) ;
+if ( (fp = fopen( filename , "w" )) == NULL ){
+printf ("文件不能打开！n");
+return 0 ;
+}
+for ( i=0; i<couter; i++ ){ //有几个节点就进行多少次的存贮
+ch = p->date[0] ;
+j = 1 ;
+while (ch != '\0'){
+fputc (ch , fp) ;
+ch = p->date[j] ;
+j++ ;
+}
+p = p->next ;
+fputc ( '#' , fp ) ; //注意在每个节点的后面加上结束的符号
+}
+fputc ( '@' , fp ) ; //整个文件关闭的标志
+fclose ( fp ) ; //注意关闭文件，
+return 0 ;
+}
+
+//**********由于库函数比较字符串提供的功能不满足要求，故自己写了一个**********/
+int mystrcmp( char * p ,char * sour ,int number )
+{
+while ( number && (*p) == (*sour) &&
+( ( (*p >= 'a') && (*p <= 'z') ) || ( (*p >= 'A') && (*p <= 'Z') ) )){
+p++ ;
+sour++ ;
+number-- ;
+}
+if ( number == 0 )
+return 1 ;
+else
+return 0 ;
+}
+
+//**********这个函数是用来实现统计字符串功能的**********//
+int coutword(lnodetype ** l , lnodetype ** end)
+{ //考虑到只统计一行的单词没有意义，故统计整个文本
+int yes = 1 ; //这个是进入单词的标志
+int no = 0 ; //在单词外面的时候的标志
+int i , j ,inaword ,count = 0 ;
+inaword = no ;
+lnodetype * s = (*l)->next ;
+for (j=0; j<(*l)->number; j++){
+for ( i=0; (s->date[i]>='a' && s->date[i]<='z') ||
+(s->date[i]>='A' && s->date[i]<='z') ||
+(s->date[i]>='0' && s->date[i]<='9' ) ||
+(s->date[i]==' '); i++ )
+{
+if ( s->date[i] == ' ' )
+inaword = no ;
+else
+if ( inaword == no )
+{
+inaword = yes ;
+count++ ; //计算单词
+}
+}
+s = s->next ;
+inaword = 0 ; //注意这里，把标志置为0了！
+}
+printf ( "n文本一共有 %d 行" , (*l)->number ) ;
+printf ("n此文本一共有 %d 个单词!" , count ) ;
+return count ;
+}
+
+//**********这个函数是用来实现计算文本行数功能的**********//
+int linecouter(lnodetype ** l , lnodetype ** end )
+{
+int couter ;
+couter = (*l)->number ;
+return couter ;
+}
+
+//**********这个函数是整和一上所有功能的菜单函数**********//
+int editmenu(lnodetype ** l , lnodetype ** end )
+{
+char choice ;
+char * p = "cls" ;
+int i = 1 ; //这两个变量是用来控制循环的
+int j= 1 ;
+system (p) ;
+prin (&(*l) , &(*end)) ;
+while (j){
+printf ("*********************************** e: 编辑相应行 *************************************n") ;
+printf ("*********************************** s: 搜索字符串 *************************************n") ;
+printf ("*********************************** t: 统计单词个数 ***********************************n") ;
+printf ("*********************************** q: 退出编辑 ***************************************n") ;
+scanf("%c",&choice);
+scanf("%c" , &choice) ; //？？？？莫名其妙的问题，非要两个请求输入语句才肯停下来！
+switch (choice)
+{
+case 'e' : {
+i = 1 ;
+while (i)
+{
+search( &(*l) , &(*end) );
+system (p) ;
+prin( &(*l) , &(*end) ) ;
+printf ("n1 继续编辑 0 结束编辑n") ;
+scanf ("%d" , &i) ;
+}
+}
+break;
+case 's' : {
+i = 1 ;
+while (i)
+{
+searchstr( &(*l) , &(*end) );
+getchar();
+getchar();
+system (p) ;
+prin( &(*l) , &(*end) ) ;
+printf ("n1 继续搜索 0 结束搜索n") ;
+scanf ("%d" , &i) ;
+}
+}
+break;
+case 't' : {
+coutword ( &(*l) , &(*end) ) ;
+getchar() ;
+}break;
+default : return 0 ;
+}
+system (p) ;
+prin( &(*l) , &(*end) ) ;
+printf ("n1 回到编辑菜单 0 结束编辑n") ;
+scanf ("%d" , &j) ;
+if (j == 1)
+system (p) ;
+else
+return 0 ;
+}
+return 0 ;
+}
+
+//**********实现第一个模块：新建空白文档**********//
+int newtext( lnodetype ** l ,lnodetype ** end )
+{
+printf ( "新文本文件:n" ) ;
+int i = 1 ;
+char judstr[MAX] ;
+lnodetype * temp ;
+char jud ;
+char * p = "cls" ;
+while ( 1 ){
+link( &(*l) , &(*end) ) ;
+jud = (*end)->date[0] ;
+if ( jud == '5' ){ //输入‘5’结束一切
+temp = (*end) ;
+(*end) = (*end)->prior ;
+free (temp) ;
+while (1){
+printf ( "******************************* out :退出不保存 ****************************n") ;
+printf ( "******************************* edit :编辑信息 *****************************n") ;
+printf ( "******************************* quit :退出而不存盘 **************************n") ;
+printf ( "******************************* qas :退出且存盘 ****************************n") ;
+printf ( "******************************* con :继续输入！ *****************************n") ;
+gets(judstr) ;
+if ( !strcmp(judstr , "out") )
+{
+exitunsave( &(*l) , &(*end) ) ;
+return 0 ;
+}
+else
+if ( !strcmp(judstr , "qas") )
+{
+quitandsave( &(*l) , &(*end) ) ;
+return 0 ;
+}
+else
+if ( !strcmp(judstr , "edit") )
+{
+editmenu (l , end) ;
+return 0;
+}
+system (p) ;
+}
+return 0 ;
+}
+}
+return 0 ;
+}
+
+//**********这个是装入文件的函数**********//
+int loadtaxt( char * filename )
+{
+FILE * fp ;
+lnodetype * l ;
+char ch ;
+int i = 0 ;
+char * p = "cls" ;
+char judstr[MAX] ;
+lnodetype * head ;
+lnodetype * end ;
+iniatelist ( &head , &end) ;
+l = end = head ;
+if ( (fp = fopen( filename, "r+")) == NULL ){
+printf ("文件不能打开！n") ;
+return 0 ;
+}
+ch = fgetc ( fp ) ;
+while ( ch != '@' ){
+lnodetype *s ;
+s = (lnodetype *)malloc ( sizeof (lnodetype) ) ;
+if ( s == NULL ){
+printf ("内存空间不够，程序即将退出！") ;
+return 0 ;
+}
+end->next = s ;
+s->prior = end ;
+end = end->next ;
+l->number++ ;
+s->quese = l->number ;
+printf ("%d行", s->quese ) ;
+while ( ch != '#'){
+s->date[i] = ch ;
+ch = fgetc (fp) ;
+i++ ;
+}
+i = 0;
+while ( (end->date[i]>='a' && end->date[i]<='z') ||
+(end->date[i]>='A' && end->date[i]<='z') ||
+(end->date[i]>='0' && end->date[i]<='9' ) ||
+(end->date[i]==' ') )
+{
+printf ( "%c" , end->date[i] ) ;
+i++ ;
+}
+end->date[i] = '\0' ; //注意在节点的最好加上这个，以让退出保存功能函数知道此节点已结束
+printf ( "n" ) ;
+i = 0;
+ch = fgetc ( fp ) ;
+}
+fclose (fp) ;
+printf ("n文件成功装入！n") ;
+while (1){
+printf ( "******************************* out :退出不保存 ****************************n") ;
+printf ( "******************************* edit :编辑信息 *****************************n") ;
+printf ( "******************************* qas :退出且存盘 ****************************n") ;
+printf ( "******************************* con :继续输入！ *****************************n") ;
+scanf("%s",judstr);
+if ( !strcmp(judstr , "out") )
+{
+exitunsave( &l , &end ) ;
+return 0 ;
+}
+else
+if ( !strcmp(judstr , "qas") )
+{
+quitandsave( &l , &end ) ;
+return 0 ;
+}
+else
+if ( !strcmp(judstr , "edit") )
+{
+editmenu (&l , &end) ;
+return 0 ;
+}
+system (p) ;
+}
+return 0 ;
+}
+
+//**********主函数**********//
+void main (  )
+{
+//iniatelist (&l , &end) ;
+//newtext(&l , &end) ;
+char filename[MAX] ;
+scanf ( "%s" , filename ) ;
+loadtaxt( filename ) ;
+}
